@@ -1,0 +1,175 @@
+Option Explicit
+
+Private Sub Worksheet_Activate()
+    
+    Dim Msg, Style, Title, Help, Ctxt, response, MyString
+    Msg = "Do you want to setup ?"
+    Style = vbYesNo
+    Title = "Automatic Set up"
+    Help = "DEMO.HLP"
+    Ctxt = 1000
+    response = MsgBox(Msg, Style, Title, Help, Ctxt)
+    If response = vbYes Then
+        MyString = "Yes"
+    Else
+        MyString = "No"
+    End If
+    If MyString = "Yes" Then
+        Macro1
+    End If
+End Sub
+
+Sub Macro1()
+'
+' Macro1 Macro
+'
+' Keyboard Shortcut: Ctrl+p
+'
+    Range("A1").Select
+    ActiveCell.FormulaR1C1 = "Id"
+    Range("B1").Select
+    ActiveCell.FormulaR1C1 = "Name"
+    Range("C1").Select
+    ActiveCell.FormulaR1C1 = "Nationality"
+    Range("F2").Select
+    ActiveCell.FormulaR1C1 = "Adder"
+    Range("G2").Select
+    ActiveCell.FormulaR1C1 = "Name"
+    Range("H2").Select
+    ActiveCell.FormulaR1C1 = "Nationality"
+    Range("G3:H3").Select
+    With Selection.Font
+        .ThemeColor = xlThemeColorAccent6
+        .TintAndShade = 0
+    End With
+    Range("G3").Select
+    ActiveCell.FormulaR1C1 = ""
+    Range("G3:H3").Select
+    Range("H3").Activate
+    With Selection.Interior
+        .Pattern = xlSolid
+        .PatternColorIndex = xlAutomatic
+        .Color = 65535
+        .TintAndShade = 0
+        .PatternTintAndShade = 0
+    End With
+    With Selection.Interior
+        .Pattern = xlSolid
+        .PatternColorIndex = xlAutomatic
+        .Color = 65535
+        .TintAndShade = 0
+        .PatternTintAndShade = 0
+    End With
+    Range("A1:C1").Select
+    Selection.Font.Bold = True
+    Range("F2:H2").Select
+    Selection.Font.Bold = True
+    Columns("A:C").Select
+    Selection.Columns.AutoFit
+    Range("F2:H2").Select
+    Selection.Columns.AutoFit
+    Range("B1").Select
+End Sub
+Option Explicit
+
+Public Sub AddClient()
+
+    Dim http As Object
+    Dim url As String
+    Dim clientData As String
+    Dim response As String
+    
+    ' Initialize the XMLHttpRequest object
+    Set http = CreateObject("MSXML2.XMLHTTP")
+    
+    ' The URL of the REST API endpoint
+    url = "http://127.0.0.1:5000/user"
+    
+    ' The JSON data to be sent in the POST request
+    Dim Name, Nationality As String
+    
+    Name = Range("G3").Value
+    Nationality = Range("H3").Value
+    
+    clientData = "{""Name"":""" & Name & """,""Nationality"":""" & Nationality & """}"
+    Debug.Print clientData
+    http.Open "POST", url, False
+    
+    http.setRequestHeader "Content-Type", "application/json"
+    http.setRequestHeader "Accept", "application/json"
+
+    http.Send clientData
+    
+    response = http.responseText
+    
+    MsgBox "Response from API: " & response
+    
+    Set http = Nothing
+    displayer
+
+    
+End Sub
+
+Function Test_LateBinding() As String
+    
+    Dim objRequest As Object
+    Dim strUrl As String
+    Dim blnAsync As Boolean
+    Dim strResponse As String
+
+    Set objRequest = CreateObject("MSXML2.XMLHTTP")
+    
+    ' Add a cache-busting query parameter (e.g., a timestamp)
+    strUrl = "http://127.0.0.1:5000/users?timestamp=" & Now()
+    blnAsync = False ' Ensure synchronous request
+
+    With objRequest
+        .Open "GET", strUrl, blnAsync
+        .setRequestHeader "Content-Type", "application/json"
+        .Send
+
+        While objRequest.readyState <> 4
+            DoEvents
+        Wend
+        strResponse = .responseText
+    End With
+
+    Test_LateBinding = strResponse
+
+End Function
+
+Sub displayer()
+
+    Dim jsonString As String
+    Dim json As Object
+    Dim item As Object
+    Dim i As Integer
+    Dim currentCell As Range
+    
+    ' Fetch fresh data from the API
+    jsonString = Test_LateBinding() ' Assuming this returns a JSON string
+    Set json = JsonConverter.ParseJson(jsonString)
+    
+    ' Clear the previous data
+    Range("A2:C100").ClearContents
+    
+    ' Set the starting cell
+    Set currentCell = Range("A2")
+    
+    ' Iterate over each item in the JSON array
+    For i = 1 To json.Count
+        Set item = json(i)
+       
+        ' Insert data into the worksheet
+        currentCell.Value = item("Id")
+        currentCell.Offset(0, 1).Value = item("Name")
+        currentCell.Offset(0, 2).Value = item("Nationality")
+        
+        ' Move to the next row
+        Set currentCell = currentCell.Offset(1, 0)
+        
+        ' Debug output
+        Debug.Print "Id: " & item("Id") & ", Name: " & item("Name") & ", Nationality: " & item("Nationality")
+    Next i
+
+End Sub
